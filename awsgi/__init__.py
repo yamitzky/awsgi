@@ -1,4 +1,4 @@
-from io import StringIO
+from io import StringIO, BytesIO
 import sys
 try:
     # Python 3
@@ -42,13 +42,14 @@ class StartResponse:
 
 
 def environ(event, context):
+    body = (event.get('body', '') or '').encode('utf-8')
     environ = {
         'REQUEST_METHOD': event['httpMethod'],
         'SCRIPT_NAME': '',
         'PATH_INFO': event['path'],
         'QUERY_STRING': urlencode(event['queryStringParameters'] or {}),
         'REMOTE_ADDR': '127.0.0.1',
-        'CONTENT_LENGTH': str(len(event.get('body', '') or '')),
+        'CONTENT_LENGTH': str(len(body)),
         'HTTP': 'on',
         'SERVER_PROTOCOL': 'HTTP/1.1',
         'REMOTE_ADDR': '127.0.0.1',
@@ -56,7 +57,7 @@ def environ(event, context):
         'SERVER_PORT': '80',
         'wsgi.url_scheme': 'http',
         'wsgi.version': (1, 0),
-        'wsgi.input': StringIO(event.get('body')),
+        'wsgi.input': BytesIO(body),
         'wsgi.errors': sys.stderr,
         'wsgi.multithread': False,
         'wsgi.multiprocess': False,
