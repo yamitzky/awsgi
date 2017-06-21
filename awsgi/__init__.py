@@ -51,6 +51,10 @@ def environ(event, context):
         'CONTENT_LENGTH': str(len(event.get('body', '') or '')),
         'HTTP': 'on',
         'SERVER_PROTOCOL': 'HTTP/1.1',
+        'REMOTE_ADDR': '127.0.0.1',
+        'SERVER_NAME': 'awsgi',
+        'SERVER_PORT': '80',
+        'wsgi.url_scheme': 'http',
         'wsgi.version': (1, 0),
         'wsgi.input': StringIO(event.get('body')),
         'wsgi.errors': sys.stderr,
@@ -58,7 +62,7 @@ def environ(event, context):
         'wsgi.multiprocess': False,
         'wsgi.run_once': False,
     }
-    headers = event.get('headers', {})
+    headers = event.get('headers', {}) or {}
     for k, v in headers.items():
         k = k.upper().replace('-', '_')
 
