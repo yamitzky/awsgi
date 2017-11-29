@@ -1,3 +1,4 @@
+import base64
 from io import StringIO, BytesIO
 import sys
 try:
@@ -34,15 +35,27 @@ class StartResponse:
         return self.body.write
 
     def response(self, output):
-        return {
+        headers = dict(self.headers)
+        ret = {
             'statusCode': str(self.status),
-            'headers': dict(self.headers),
-            'body': self.body.getvalue() + ''.join(map(convert_str, output)),
+            'headers': headers,
         }
+        ct = headers.get('Content-Type', '')
+        if (headers.get('Content-Encoding') == 'gzip'
+                or (not ct.startswith("text/") and ct != "application/json")):
+            ret['body'] = base64.b64encode(
+                self.body.getvalue().encode('utf-8') + b''.join(output)).decode('utf-8')
+            ret["isBase64Encoded"] = "true"
+        else:
+            ret['body'] = self.body.getvalue() + ''.join(map(convert_str, output))
+        return ret
 
 
 def environ(event, context):
-    body = (event.get('body', '') or '').encode('utf-8')
+    if event.get('isBase64Encoded'):
+        body = base64.b64decode(event.get('body', ''))
+    else:
+        body = (event.get('body', '') or '').encode('utf-8')
     environ = {
         'REQUEST_METHOD': event['httpMethod'],
         'SCRIPT_NAME': '',
